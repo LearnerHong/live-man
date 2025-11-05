@@ -540,10 +540,6 @@ class DoubaoTTS(BaseTTS):
             "audio": {
                 "voice_type": "xxx",
                 "encoding": "pcm",
-                "rate": 16000,
-                "speed_ratio": 1.0,
-                "volume_ratio": 1.0,
-                "pitch_ratio": 1.0,
             },
             "request": {
                 "reqid": "xxx",
@@ -575,8 +571,13 @@ class DoubaoTTS(BaseTTS):
             full_client_request.extend(payload_bytes)  # payload
 
             logger.info(f"🔌 正在连接豆包WebSocket: {self.api_url}")
-            header = {"Authorization": f"Bearer; {self.token}"}
+            header = {"Authorization": f"Bearer;{self.token}"}  # 注意：Bearer后面没有空格！
             first = True
+
+            # 调试：打印请求内容
+            logger.debug(f"请求体: {json.dumps(submit_request_json, ensure_ascii=False, indent=2)}")
+            logger.debug(f"Header: {header}")
+
             async with websockets.connect(self.api_url, extra_headers=header, ping_interval=None) as ws:
                 logger.info(f"✅ WebSocket连接成功，发送请求...")
                 await ws.send(full_client_request)
@@ -606,8 +607,21 @@ class DoubaoTTS(BaseTTS):
                         if sequence_number < 0:
                             logger.info(f"✅ 豆包TTS完成: 共{chunk_count}个音频块, {total_bytes}字节")
                             break
+                    elif message_type == 0xf:  # 错误或状态消息
+                        try:
+                            # 尝试解析错误消息
+                            error_payload = payload
+                            if message_type_specific_flags == 1:
+                                # gzip 压缩
+                                error_payload = gzip.decompress(payload)
+                            error_msg = json.loads(error_payload.decode('utf-8'))
+                            logger.error(f"❌ 豆包API错误: {json.dumps(error_msg, ensure_ascii=False, indent=2)}")
+                        except Exception as parse_err:
+                            logger.error(f"❌ 收到错误消息(类型15)，解析失败: {parse_err}")
+                            logger.error(f"   原始payload长度: {len(payload)} bytes")
+                        break
                     else:
-                        logger.warning(f"⚠️ 收到非音频消息类型: {message_type}")
+                        logger.warning(f"⚠️ 收到未知消息类型: {message_type}, flags: {message_type_specific_flags}")
                         break
         except Exception as e:
             logger.error(f"❌ 豆包TTS异常: {e}")

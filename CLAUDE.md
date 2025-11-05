@@ -2,10 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 📚 完整技术文档
-
-**详细技术文档请查看：**
-
+## 相关文档
 - **[docs/](./docs/)** - Markdown格式技术文档（适合AI分析和开发查阅）
   - [docs/README.md](./docs/README.md) - 文档总索引
   - [docs/architecture/](./docs/architecture/) - 架构设计
@@ -19,9 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 代码高亮 + 一键复制
   - 📌 **[立即查看](./docs-site/index.html)**
 
-本文档提供快速开发指引，深入技术细节请参阅上述目录。
-
----
 
 ## 项目概述
 
@@ -370,31 +364,6 @@ completion = client.chat.completions.create(
 )
 ```
 
-## 技术约束
-
-1. **音频格式固定**: 16kHz, 单声道, 20ms 分包 (320 samples/chunk)
-2. **视频帧率固定**: 25fps (webrtc.py:32 VIDEO_PTIME=0.04)
-3. **并发限制**: 每个会话独占 GPU 显存，由 `--max_session` 控制
-4. **PyTorch 多进程**: 使用 `spawn` 模式 (app.py:317) 避免 CUDA 初始化问题
-5. **浏览器兼容性**: Web Speech API 仅支持 Chrome/Edge (dashboard.html:608)
-
-## 模型下载
-
-**官方云盘：**
-- 夸克: https://pan.quark.cn/s/83a750323ef0
-- Google Drive: https://drive.google.com/drive/folders/1FOC_MD6wdogyyX_7V1d4NDIO7P9NlSAJ
-
-**所需文件：**
-- `wav2lip256.pth` → 放到 `models/wav2lip.pth`
-- `wav2lip256_avatar1.tar.gz` → 解压到 `data/avatars/`
-- musetalk 模型自动下载或手动放到 `models/` 目录
-
-## 文档资源
-
-- 官方文档: https://livetalking-doc.readthedocs.io/
-- FAQ: https://livetalking-doc.readthedocs.io/zh-cn/latest/faq.html
-- 商业版功能: https://livetalking-doc.readthedocs.io/zh-cn/latest/service.html
-
 ## 项目结构说明
 
 ### 核心文件
@@ -424,3 +393,11 @@ completion = client.chat.completions.create(
 - `musetalk/`: musetalk 模型代码
 - `wav2lip/`: wav2lip 模型代码
 - `ultralight/`: ultralight 模型代码
+
+
+## 修改之后
+
+1. 请手动 
+* git add <文件名>
+* git commit -m "修改说明"
+* git push

@@ -88,6 +88,7 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1); /* 镜像显示 */
+            display: none; /* 初始隐藏，启动摄像头后显示 */
         }
 
         .local-video-placeholder {
@@ -389,6 +390,8 @@
                         <div class="video-container">
                             <!-- 数字人视频 -->
                             <video id="video" autoplay playsinline></video>
+                            <!-- 数字人音频 -->
+                            <audio id="audio" autoplay></audio>
 
                             <!-- 本地摄像头视频窗口 -->
                             <div id="local-video-container">
@@ -737,6 +740,14 @@
             });
 
             function startLocalCamera() {
+                // 检查浏览器是否支持 getUserMedia
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    console.error('浏览器不支持 getUserMedia API');
+                    alert('您的浏览器不支持摄像头功能，或页面不是通过 HTTPS/localhost 访问。\n请使用 Chrome/Edge 浏览器，并确保通过 localhost 或 HTTPS 访问。');
+                    $('#enable-local-camera').prop('checked', false);
+                    return;
+                }
+
                 navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 640 },
@@ -754,7 +765,22 @@
                 })
                 .catch(function(error) {
                     console.error('无法访问摄像头:', error);
-                    alert('无法访问摄像头，请检查浏览器权限设置。');
+                    let errorMsg = '无法访问摄像头，请检查浏览器权限设置。';
+
+                    // 根据不同的错误类型提供更详细的提示
+                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                        errorMsg = '摄像头权限被拒绝，请在浏览器设置中允许访问摄像头。';
+                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                        errorMsg = '未找到可用的摄像头设备。';
+                    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                        errorMsg = '摄像头正在被其他应用程序使用。';
+                    } else if (error.name === 'OverconstrainedError') {
+                        errorMsg = '摄像头不支持请求的分辨率。';
+                    } else if (error.name === 'SecurityError') {
+                        errorMsg = '安全限制：请确保通过 HTTPS 或 localhost 访问页面。';
+                    }
+
+                    alert(errorMsg);
                     $('#enable-local-camera').prop('checked', false);
                 });
             }

@@ -384,13 +384,282 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+
+        /* ==================== 电话模式样式 ==================== */
+        .phone-mode-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .phone-mode-overlay.active {
+            display: flex;
+            opacity: 1;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 电话模式视频容器 */
+        .phone-video-wrapper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+
+        .phone-video-wrapper video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* 电话模式本地视频 */
+        .phone-local-video {
+            position: absolute;
+            bottom: 100px;
+            right: 30px;
+            width: 180px;
+            height: 180px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        .phone-local-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        /* 电话模式控制栏 */
+        .phone-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 40px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .phone-control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 24px;
+            color: white;
+        }
+
+        .phone-control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .phone-control-btn.hangup {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .phone-control-btn.mute {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .phone-control-btn.mute.active {
+            background: #4361ee;
+        }
+
+        /* 拨打电话大按钮 */
+        .call-button-wrapper {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .call-main-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 60px;
+            cursor: pointer;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .call-main-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(102, 126, 234, 0.6);
+        }
+
+        .call-main-button:active {
+            transform: scale(0.95);
+        }
+
+        .call-main-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.6s ease;
+        }
+
+        .call-main-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .call-button-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* 连接动画 */
+        .connecting-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .connecting-spinner {
+            width: 80px;
+            height: 80px;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .connecting-text {
+            margin-top: 30px;
+            font-size: 24px;
+            color: white;
+            font-weight: 300;
+        }
+
+        /* 通话状态指示 */
+        .call-status {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .call-status .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
+    <!-- 电话模式全屏界面 -->
+    <div class="phone-mode-overlay" id="phone-mode">
+        <div class="phone-video-wrapper">
+            <!-- 通话状态 -->
+            <div class="call-status" id="call-status-indicator">
+                <span class="status-dot"></span>
+                <span id="call-status-text">通话中</span>
+            </div>
+
+            <!-- 连接中动画 -->
+            <div class="connecting-overlay" id="connecting-overlay">
+                <div class="connecting-spinner"></div>
+                <div class="connecting-text">正在连接...</div>
+            </div>
+
+            <!-- 数字人视频 -->
+            <video id="phone-video" autoplay playsinline></video>
+            <!-- 数字人音频 -->
+            <audio id="phone-audio" autoplay></audio>
+
+            <!-- 本地摄像头 -->
+            <div class="phone-local-video" id="phone-local-video-container">
+                <video id="phone-local-video" autoplay playsinline muted></video>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="phone-controls">
+                <button class="phone-control-btn mute" id="phone-mute-btn" title="静音/取消静音">
+                    <i class="bi bi-mic-fill"></i>
+                </button>
+                <button class="phone-control-btn hangup" id="phone-hangup-btn" title="挂断">
+                    <i class="bi bi-telephone-x-fill"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="dashboard-container">
         <div class="row">
             <div class="col-12">
                 <h1 class="text-center mb-4">livetalking数字人交互平台 - 视频通话模式</h1>
+
+                <!-- 拨打电话大按钮 -->
+                <div class="call-button-wrapper">
+                    <button class="call-main-button" id="start-call-btn">
+                        <i class="bi bi-telephone-fill"></i>
+                    </button>
+                    <div class="call-button-text">点击开始视频通话</div>
+                </div>
             </div>
         </div>
 
@@ -1156,7 +1425,217 @@
                 if (localStream) {
                     stopLocalCamera();
                 }
+                if (phoneLocalStream) {
+                    stopPhoneMode();
+                }
             });
+
+            // ==================== 电话模式功能 ====================
+            let phoneLocalStream = null;
+            let phonePC = null;
+            let phoneIsConnected = false;
+            let phoneMuted = false;
+
+            // 点击拨打电话按钮
+            $('#start-call-btn').click(async function() {
+                console.log('启动电话模式...');
+
+                // 显示电话模式界面
+                $('#phone-mode').addClass('active');
+                $('#connecting-overlay').show();
+
+                try {
+                    // 1. 启动本地摄像头
+                    await startPhoneCamera();
+
+                    // 2. 建立 WebRTC 连接
+                    await startPhoneConnection();
+
+                    // 3. 自动启动语音识别
+                    if (recognition && !isVoiceActive) {
+                        try {
+                            await requestMicrophonePermission();
+                            startPhoneVoiceRecognition();
+                        } catch (error) {
+                            console.error('麦克风权限失败:', error);
+                        }
+                    }
+
+                    // 4. 隐藏连接动画
+                    setTimeout(function() {
+                        $('#connecting-overlay').fadeOut(500);
+                        phoneIsConnected = true;
+                    }, 2000);
+
+                } catch (error) {
+                    console.error('启动电话模式失败:', error);
+                    alert('无法启动视频通话，请检查摄像头和麦克风权限');
+                    exitPhoneMode();
+                }
+            });
+
+            // 启动电话模式摄像头
+            async function startPhoneCamera() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('浏览器不支持摄像头');
+                }
+
+                phoneLocalStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
+
+                const phoneLocalVideo = document.getElementById('phone-local-video');
+                phoneLocalVideo.srcObject = phoneLocalStream;
+                console.log('电话模式摄像头已启动');
+            }
+
+            // 启动电话模式 WebRTC 连接
+            async function startPhoneConnection() {
+                const config = {
+                    sdpSemantics: 'unified-plan',
+                    iceServers: [{ urls: ['stun:stun.l.google.com:19302'] }]
+                };
+
+                phonePC = new RTCPeerConnection(config);
+
+                // 监听媒体轨道
+                phonePC.addEventListener('track', (evt) => {
+                    if (evt.track.kind === 'video') {
+                        document.getElementById('phone-video').srcObject = evt.streams[0];
+                    } else {
+                        document.getElementById('phone-audio').srcObject = evt.streams[0];
+                    }
+                });
+
+                // 添加音视频轨道
+                phonePC.addTransceiver('video', { direction: 'recvonly' });
+                phonePC.addTransceiver('audio', { direction: 'recvonly' });
+
+                // 创建 offer
+                const offer = await phonePC.createOffer();
+                await phonePC.setLocalDescription(offer);
+
+                // 等待 ICE 收集完成
+                await new Promise((resolve) => {
+                    if (phonePC.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        const checkState = () => {
+                            if (phonePC.iceGatheringState === 'complete') {
+                                phonePC.removeEventListener('icegatheringstatechange', checkState);
+                                resolve();
+                            }
+                        };
+                        phonePC.addEventListener('icegatheringstatechange', checkState);
+                    }
+                });
+
+                // 发送 offer 到服务器
+                const response = await fetch('/offer', {
+                    body: JSON.stringify({
+                        sdp: phonePC.localDescription.sdp,
+                        type: phonePC.localDescription.type,
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                const answer = await response.json();
+                document.getElementById('sessionid').value = answer.sessionid;
+                await phonePC.setRemoteDescription(answer);
+
+                console.log('电话模式 WebRTC 连接已建立, sessionid:', answer.sessionid);
+            }
+
+            // 启动电话模式语音识别
+            function startPhoneVoiceRecognition() {
+                if (!recognition) {
+                    console.warn('语音识别不可用');
+                    return;
+                }
+
+                try {
+                    recognition.start();
+                    isVoiceActive = true;
+                    console.log('电话模式语音识别已启动');
+                } catch (e) {
+                    console.error('启动语音识别失败:', e);
+                }
+            }
+
+            // 挂断按钮
+            $('#phone-hangup-btn').click(function() {
+                exitPhoneMode();
+            });
+
+            // 静音按钮
+            $('#phone-mute-btn').click(function() {
+                phoneMuted = !phoneMuted;
+
+                if (phoneMuted) {
+                    $(this).addClass('active');
+                    $(this).html('<i class="bi bi-mic-mute-fill"></i>');
+                    // 停止语音识别
+                    if (isVoiceActive && recognition) {
+                        isVoiceActive = false;
+                        recognition.stop();
+                    }
+                } else {
+                    $(this).removeClass('active');
+                    $(this).html('<i class="bi bi-mic-fill"></i>');
+                    // 重新启动语音识别
+                    if (!isVoiceActive && recognition) {
+                        startPhoneVoiceRecognition();
+                    }
+                }
+            });
+
+            // 退出电话模式
+            function exitPhoneMode() {
+                console.log('退出电话模式...');
+
+                // 停止语音识别
+                if (isVoiceActive && recognition) {
+                    isVoiceActive = false;
+                    recognition.stop();
+                }
+
+                // 关闭摄像头
+                if (phoneLocalStream) {
+                    phoneLocalStream.getTracks().forEach(track => track.stop());
+                    phoneLocalStream = null;
+                }
+
+                // 关闭 WebRTC 连接
+                if (phonePC) {
+                    phonePC.close();
+                    phonePC = null;
+                }
+
+                // 重置静音状态
+                phoneMuted = false;
+                $('#phone-mute-btn').removeClass('active').html('<i class="bi bi-mic-fill"></i>');
+
+                // 隐藏电话模式界面
+                $('#phone-mode').removeClass('active');
+                phoneIsConnected = false;
+
+                console.log('电话模式已退出');
+            }
+
+            // 停止电话模式（用于页面卸载）
+            function stopPhoneMode() {
+                if (phoneIsConnected) {
+                    exitPhoneMode();
+                }
+            }
         });
     </script>
 </body>

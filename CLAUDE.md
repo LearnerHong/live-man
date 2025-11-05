@@ -1,33 +1,12 @@
-# CLAUDE.md
+# GUIDE FOR AI CODE ANALYSIS
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to ai code agent when working with code in this repository.
 
-## 相关文档
+## 项目介绍
 
-## 快速启动
+这个项目是一个基于WebRTC的实时交互流式数字人系统，主要用于实现数字人对话功能。
 
-### 基础启动命令
-
-**Wav2Lip 模型**
-```bash
-python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar1
-```
-
-**MuseTalk 模型（高质量）：**
-```bash
-python app.py --transport webrtc --model musetalk --avatar_id avator_1 --batch_size 16
-```
-
-**Ultralight 模型：**
-```bash
-python app.py --transport webrtc --model ultralight --avatar_id <avatar_id>
-```
-
-**自定义 TTS：**
-```bash
-python app.py --transport webrtc --model wav2lip --avatar_id wav2lip256_avatar1 \
-  --tts gpt-sovits --TTS_SERVER http://127.0.0.1:9880 --REF_FILE reference.wav
-```
+最终是要实现的一个信贷智能客服系统，用户可以与数字人进行对话，数字人会根据用户的问题给出回答。
 
 ### 访问地址
 - 对话主页: `http://<serverip>:8010/index.html`
@@ -54,7 +33,8 @@ WebRTC 传输层 (webrtc.py)
 详见: [docs/guides/dataflow.md](./docs/guides/dataflow.md)
 
 ### 开发流程
-1、当完成代码修改后，请手动执行以下命令：
+
+1、当完成代码修改后，请自动执行以下命令：
 ```bash
 git add <文件名> # 添加修改的文件
 git commit -m "feat: 具体修改内容" # 提交（使用清晰的提交信息）

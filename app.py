@@ -146,6 +146,17 @@ async def human(request):
         params = await request.json()
 
         sessionid = params.get('sessionid',0)
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先点击'开始连接'按钮建立连接"}
+                ),
+            )
+
         if params.get('interrupt'):
             nerfreals[sessionid].flush_talk()
 
@@ -182,8 +193,19 @@ async def interrupt_talk(request):
         params = await request.json()
 
         sessionid = params.get('sessionid',0)
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先建立连接"}
+                ),
+            )
+
         nerfreals[sessionid].flush_talk()
-        
+
         return web.Response(
             content_type="application/json",
             text=json.dumps(
@@ -203,6 +225,17 @@ async def humanaudio(request):
     try:
         form= await request.post()
         sessionid = int(form.get('sessionid',0))
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先建立连接"}
+                ),
+            )
+
         fileobj = form["file"]
         filename=fileobj.filename
         filebytes=fileobj.file.read()
@@ -227,7 +260,18 @@ async def set_audiotype(request):
     try:
         params = await request.json()
 
-        sessionid = params.get('sessionid',0)    
+        sessionid = params.get('sessionid',0)
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先建立连接"}
+                ),
+            )
+
         nerfreals[sessionid].set_custom_state(params['audiotype'],params['reinit'])
 
         return web.Response(
@@ -250,6 +294,17 @@ async def record(request):
         params = await request.json()
 
         sessionid = params.get('sessionid',0)
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先建立连接"}
+                ),
+            )
+
         if params['type']=='start_record':
             # nerfreals[sessionid].put_msg_txt(params['text'])
             nerfreals[sessionid].start_recording()
@@ -271,15 +326,35 @@ async def record(request):
         )
 
 async def is_speaking(request):
-    params = await request.json()
+    try:
+        params = await request.json()
 
-    sessionid = params.get('sessionid',0)
-    return web.Response(
-        content_type="application/json",
-        text=json.dumps(
-            {"code": 0, "data": nerfreals[sessionid].is_speaking()}
-        ),
-    )
+        sessionid = params.get('sessionid',0)
+
+        # 检查 session 是否存在
+        if sessionid not in nerfreals:
+            logger.error(f'Session not found: sessionid={sessionid}')
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": -1, "msg": "会话不存在，请先建立连接"}
+                ),
+            )
+
+        return web.Response(
+            content_type="application/json",
+            text=json.dumps(
+                {"code": 0, "data": nerfreals[sessionid].is_speaking()}
+            ),
+        )
+    except Exception as e:
+        logger.exception('exception:')
+        return web.Response(
+            content_type="application/json",
+            text=json.dumps(
+                {"code": -1, "msg": str(e)}
+            ),
+        )
 
 
 async def on_shutdown(app):

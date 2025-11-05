@@ -1074,35 +1074,41 @@
                         const transcript = event.results[i][0].transcript;
 
                         if (event.results[i].isFinal) {
-                            // 最终结果
-                            finalTranscript += transcript;
-                            console.log('识别结果（最终）:', transcript);
+                            // 只有非空内容才累加
+                            if (transcript && transcript.trim()) {
+                                finalTranscript += transcript;
+                                console.log('识别结果（最终）:', transcript);
 
-                            // 清除之前的定时器
-                            if (sentenceTimeout) {
-                                clearTimeout(sentenceTimeout);
-                            }
+                                // 清除之前的定时器
+                                if (sentenceTimeout) {
+                                    clearTimeout(sentenceTimeout);
+                                }
 
-                            // 检查是否包含明确的句子结束符
-                            const endsWithPunctuation = /[。！？\.!?]$/.test(finalTranscript.trim());
+                                // 检查是否包含明确的句子结束符
+                                const endsWithPunctuation = /[。！？\.!?]$/.test(finalTranscript.trim());
 
-                            if (endsWithPunctuation) {
-                                // 如果包含句子结束符，立即发送（100ms去抖）
-                                sentenceTimeout = setTimeout(function() {
-                                    sendTranscriptToLLM(finalTranscript);
-                                    finalTranscript = '';
-                                }, 100);
+                                if (endsWithPunctuation) {
+                                    // 如果包含句子结束符，立即发送（100ms去抖）
+                                    sentenceTimeout = setTimeout(function() {
+                                        sendTranscriptToLLM(finalTranscript);
+                                        finalTranscript = '';
+                                    }, 100);
+                                } else {
+                                    // 否则等待0.3秒，看用户是否继续说话
+                                    sentenceTimeout = setTimeout(function() {
+                                        sendTranscriptToLLM(finalTranscript);
+                                        finalTranscript = '';
+                                    }, 300);
+                                }
                             } else {
-                                // 否则等待0.3秒，看用户是否继续说话
-                                sentenceTimeout = setTimeout(function() {
-                                    sendTranscriptToLLM(finalTranscript);
-                                    finalTranscript = '';
-                                }, 300);
+                                console.log('跳过空识别结果');
                             }
 
                         } else {
-                            // 中间结果
-                            interimTranscript += transcript;
+                            // 中间结果也要检查
+                            if (transcript && transcript.trim()) {
+                                interimTranscript += transcript;
+                            }
                         }
                     }
 
@@ -1348,6 +1354,12 @@
 
             // 添加对话到电话模式transcript
             function addCallTranscript(message, type = 'user') {
+                // 检查消息是否为空或只有空格
+                if (!message || !message.trim()) {
+                    console.log('跳过空消息');
+                    return;
+                }
+
                 const transcriptArea = $('#call-transcript');
 
                 // 首次添加时清空提示信息
@@ -1505,14 +1517,19 @@
             // 修改 sendTranscriptToLLM 函数，在电话模式下添加到transcript
             const originalSendTranscriptToLLM = sendTranscriptToLLM;
             sendTranscriptToLLM = function(text) {
-                if (callModeActive) {
-                    addCallTranscript(text, 'user');
+                // 提前检查文本是否为空
+                if (!text || !text.trim()) {
+                    console.log('跳过空文本，不发送到LLM');
+                    return;
                 }
-
-                if (!text || !text.trim()) return;
 
                 const cleanText = text.trim();
                 console.log('发送到 LLM:', cleanText);
+
+                // 在电话模式下添加到transcript
+                if (callModeActive) {
+                    addCallTranscript(cleanText, 'user');
+                }
 
                 // 显示在聊天记录中（只在非电话模式）
                 if (!callModeActive) {

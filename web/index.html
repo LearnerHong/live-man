@@ -317,29 +317,33 @@
 
         /* 实时识别文字显示 */
         .realtime-transcript {
-            min-height: 60px;
-            padding: 12px;
+            min-height: 70px;
+            padding: 15px;
             background-color: #fff;
             border: 2px solid #e0e0e0;
             border-radius: var(--border-radius);
             margin-bottom: 15px;
             font-size: 16px;
-            line-height: 1.6;
+            line-height: 1.8;
+            transition: all 0.3s ease;
         }
 
         .realtime-transcript.active {
             border-color: var(--primary-color);
-            background-color: #f0f7ff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+            box-shadow: 0 2px 8px rgba(67, 97, 238, 0.15);
         }
 
         .interim-text {
-            color: #999;
+            color: #888;
             font-style: italic;
+            opacity: 0.7;
         }
 
         .final-text {
             color: var(--text-color);
             font-weight: 500;
+            font-size: 17px;
         }
 
         /* ASR 状态指示器 */
@@ -497,14 +501,14 @@
                                 </div>
 
                                 <!-- ASR 状态显示 -->
-                                <div class="asr-status stopped" id="asr-status">
+                                <div class="asr-status stopped" id="asr-status" style="display: none;">
                                     <i class="bi bi-mic-mute"></i>
-                                    <span>语音识别已停止</span>
+                                    <span>语音已停止</span>
                                 </div>
 
                                 <!-- 实时识别文字显示 -->
                                 <div class="realtime-transcript" id="realtime-transcript">
-                                    <span class="text-muted">点击下方麦克风开始语音对话...</span>
+                                    <span class="text-muted">💬 说出你想咨询的问题...</span>
                                 </div>
 
                                 <!-- 文本输入（备用） -->
@@ -521,7 +525,7 @@
                                 <button class="voice-toggle-btn" id="voice-toggle-btn">
                                     <i class="bi bi-mic-fill"></i>
                                 </button>
-                                <div class="voice-toggle-label" id="voice-toggle-label">点击开启语音对话</div>
+                                <div class="voice-toggle-label" id="voice-toggle-label">开始语音聊天</div>
                             </div>
 
                             <!-- 朗读模式 -->
@@ -731,7 +735,7 @@
                 // 添加"正在思考"占位消息
                 const thinkingMsg = $(`
                     <div class="asr-text system-message thinking-message">
-                        数字人: <i class="bi bi-three-dots"></i> 正在思考中...
+                        数字人: 思考中...
                     </div>
                 `);
                 $('#chat-messages').append(thinkingMsg);
@@ -877,10 +881,8 @@
 
                 recognition.onstart = function() {
                     console.log('语音识别已开始');
-                    $('#asr-status')
-                        .removeClass('stopped')
-                        .addClass('listening')
-                        .html('<i class="bi bi-mic-fill"></i><span>正在监听...</span>');
+                    // 隐藏ASR状态提示
+                    $('#asr-status').hide();
                     $('#realtime-transcript').addClass('active');
                 };
 
@@ -904,17 +906,17 @@
                             const endsWithPunctuation = /[。！？\.!?]$/.test(finalTranscript.trim());
 
                             if (endsWithPunctuation) {
-                                // 如果包含句子结束符，0.5秒后立即发送
+                                // 如果包含句子结束符，立即发送（100ms去抖）
                                 sentenceTimeout = setTimeout(function() {
                                     sendTranscriptToLLM(finalTranscript);
                                     finalTranscript = '';
-                                }, 500);
+                                }, 100);
                             } else {
-                                // 否则等待0.8秒，看用户是否继续说话
+                                // 否则等待0.3秒，看用户是否继续说话
                                 sentenceTimeout = setTimeout(function() {
                                     sendTranscriptToLLM(finalTranscript);
                                     finalTranscript = '';
-                                }, 800);
+                                }, 300);
                             }
 
                         } else {
@@ -963,10 +965,7 @@
                             }
                         }, 100);
                     } else {
-                        $('#asr-status')
-                            .removeClass('listening')
-                            .addClass('stopped')
-                            .html('<i class="bi bi-mic-mute"></i><span>语音识别已停止</span>');
+                        $('#asr-status').hide();
                         $('#realtime-transcript').removeClass('active');
                     }
                 };
@@ -1015,7 +1014,7 @@
                         .html('<i class="bi bi-mic-mute-fill"></i>');
                     $('#voice-toggle-label')
                         .addClass('active')
-                        .text('点击停止语音对话');
+                        .text('结束聊天');
 
                     console.log('持续语音识别已启动');
                 } catch (e) {
@@ -1034,7 +1033,7 @@
                     .html('<i class="bi bi-mic-fill"></i>');
                 $('#voice-toggle-label')
                     .removeClass('active')
-                    .text('点击开启语音对话');
+                    .text('开始语音聊天');
 
                 // 发送剩余文本
                 if (finalTranscript.trim()) {
@@ -1043,7 +1042,7 @@
                 }
 
                 // 清空显示
-                $('#realtime-transcript').html('<span class="text-muted">点击下方麦克风开始语音对话...</span>');
+                $('#realtime-transcript').html('<span class="text-muted">💬 说出你想咨询的问题...</span>');
 
                 console.log('持续语音识别已停止');
             }
@@ -1051,6 +1050,11 @@
             // 更新实时识别文字显示
             function updateTranscriptDisplay(final, interim) {
                 let html = '';
+
+                if (final || interim) {
+                    // 显示用户标识
+                    html += '<div style="margin-bottom: 5px;"><span style="color: #4361ee; font-weight: 500;">你:</span></div>';
+                }
 
                 if (final) {
                     html += `<span class="final-text">${final}</span>`;
@@ -1061,7 +1065,7 @@
                 }
 
                 if (!final && !interim) {
-                    html = '<span class="text-muted">正在监听...</span>';
+                    html = '<span class="text-muted">💬 说出你想咨询的问题...</span>';
                 }
 
                 $('#realtime-transcript').html(html);
@@ -1080,7 +1084,7 @@
                 // 添加"正在思考"占位消息
                 const thinkingMsg = $(`
                     <div class="asr-text system-message thinking-message">
-                        数字人: <i class="bi bi-three-dots"></i> 正在思考中...
+                        数字人: 思考中...
                     </div>
                 `);
                 $('#chat-messages').append(thinkingMsg);

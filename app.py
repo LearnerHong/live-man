@@ -402,6 +402,9 @@ if __name__ == '__main__':
     parser.add_argument('--REF_FILE', type=str, default="zh-CN-YunxiaNeural")
     parser.add_argument('--REF_TEXT', type=str, default=None)
     parser.add_argument('--TTS_SERVER', type=str, default='http://127.0.0.1:9880') # http://localhost:9000
+    parser.add_argument('--tts_speed', type=float, default=1.0, help="TTS语速 (0.2~3.0, 默认1.0, 建议1.2~1.5加快)")
+    parser.add_argument('--tts_volume', type=float, default=1.0, help="TTS音量 (0.1~3.0, 默认1.0)")
+    parser.add_argument('--tts_pitch', type=float, default=1.0, help="TTS音调 (0.1~3.0, 默认1.0)")
     # parser.add_argument('--CHARACTER', type=str, default='test')
     # parser.add_argument('--EMOTION', type=str, default='default')
 

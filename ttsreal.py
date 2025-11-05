@@ -523,9 +523,17 @@ class DoubaoTTS(BaseTTS):
         _host = "openspeech.bytedance.com"
         self.api_url = f"wss://{_host}/api/v1/tts/ws_binary"
 
+        # 读取语速、音量、音调参数
+        self.speed_ratio = getattr(opt, 'tts_speed', 1.0)
+        self.volume_ratio = getattr(opt, 'tts_volume', 1.0)
+        self.pitch_ratio = getattr(opt, 'tts_pitch', 1.0)
+
         logger.info(f"✅ 豆包TTS初始化成功")
         logger.info(f"   APPID: {self.appid}")
         logger.info(f"   音色: {opt.REF_FILE}")
+        logger.info(f"   语速: {self.speed_ratio}x (1.0=正常)")
+        logger.info(f"   音量: {self.volume_ratio}x")
+        logger.info(f"   音调: {self.pitch_ratio}x")
         logger.info(f"   API: {self.api_url}")
 
         self.request_json = {
@@ -540,6 +548,9 @@ class DoubaoTTS(BaseTTS):
             "audio": {
                 "voice_type": "xxx",
                 "encoding": "pcm",
+                "speed_ratio": self.speed_ratio,      # 语速：0.2~3.0，默认1.0
+                "volume_ratio": self.volume_ratio,     # 音量：0.1~3.0，默认1.0
+                "pitch_ratio": self.pitch_ratio,      # 音调：0.1~3.0，默认1.0
             },
             "request": {
                 "reqid": "xxx",

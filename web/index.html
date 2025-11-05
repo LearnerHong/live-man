@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>livetalking数字人交互平台 - 视频通话模式</title>
+    <title>信贷智能客服数字人交互平台</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --accent-color: #4895ef;
-            --background-color: #f8f9fa;
+            /* 清新友好配色：浅蓝+浅红 */
+            --primary-color: #3b82f6;
+            --secondary-color: #60a5fa;
+            --accent-color: #ef4444;
+            --accent-light: #f87171;
+            --background-color: #f8fafc;
             --card-bg: #ffffff;
-            --text-color: #212529;
+            --text-color: #1e293b;
+            --text-secondary: #64748b;
             --border-radius: 10px;
-            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
         }
 
         body {
@@ -52,13 +55,64 @@
         .video-container {
             position: relative;
             width: 100%;
-            background-color: #000;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--primary-color) 100%);
             border-radius: var(--border-radius);
             overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 500px;
+        }
+
+        /* 视频占位背景 - 信贷主题（柔和蓝红点缀） */
+        .video-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(185, 28, 28, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(185, 28, 28, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 1;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .video-placeholder i {
+            font-size: 80px;
+            margin-bottom: 20px;
+            color: rgba(185, 28, 28, 0.7);
+            opacity: 0.85;
+        }
+
+        .video-placeholder h3 {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .video-placeholder p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        video:not([src=""]) {
+            position: relative;
+            z-index: 2;
         }
 
         video {
@@ -555,13 +609,165 @@
         #tts-tab {
             display: none;
         }
+
+        /* ==================== 设置面板 ==================== */
+        .settings-icon-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .settings-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            min-width: 280px;
+            display: none;
+            z-index: 20;
+        }
+
+        .settings-dropdown.active {
+            display: block;
+            animation: fadeInDown 0.3s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .settings-dropdown h5 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-item {
+            margin-bottom: 15px;
+        }
+
+        .settings-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-switch .form-check-input {
+            cursor: pointer;
+        }
+
+        /* ==================== 通话时长显示 ==================== */
+        .call-duration {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .call-duration i {
+            font-size: 12px;
+        }
+
+        /* ==================== 导出按钮 ==================== */
+        .export-chat-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .export-chat-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+        }
+
+        /* 更新用户消息和数字人消息的颜色 */
+        .call-transcript-item.user {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .call-transcript-item.assistant {
+            background: #fef3c7;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .asr-text.user-message {
+            background-color: #dbeafe;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .asr-text.system-message {
+            background-color: #fef3c7;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        /* 更新按钮颜色 */
+        .call-start-button {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .call-start-button:hover {
+            box-shadow: 0 12px 40px rgba(30, 58, 95, 0.4);
+        }
+
+        .call-status-bar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        .call-control-button.hangup {
+            background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent-color) 100%);
+        }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="row">
             <div class="col-12">
-                <h1 class="text-center mb-4">livetalking数字人交互平台 - 视频通话模式</h1>
+                <h1 class="text-center mb-4">信贷智能客服数字人交互平台</h1>
             </div>
         </div>
 
@@ -577,10 +783,43 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="video-container">
+                            <!-- 视频占位符 -->
+                            <div class="video-placeholder" id="video-placeholder">
+                                <i class="bi bi-bank2"></i>
+                                <h3>信贷智能客服数字人</h3>
+                                <p>点击右侧"视频通话"开始咨询</p>
+                            </div>
+
                             <!-- 数字人视频 -->
                             <video id="video" autoplay playsinline></video>
                             <!-- 数字人音频 -->
                             <audio id="audio" autoplay></audio>
+
+                            <!-- 设置按钮 -->
+                            <button class="settings-icon-btn" id="settings-btn">
+                                <i class="bi bi-gear-fill"></i>
+                            </button>
+
+                            <!-- 设置下拉面板 -->
+                            <div class="settings-dropdown" id="settings-dropdown">
+                                <h5><i class="bi bi-sliders"></i> 设置</h5>
+                                <div class="settings-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="use-stun">
+                                        <label class="form-check-label" for="use-stun">使用STUN服务器</label>
+                                    </div>
+                                </div>
+                                <div class="settings-item">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enable-local-camera">
+                                        <label class="form-check-label" for="enable-local-camera">开启本地摄像头</label>
+                                    </div>
+                                </div>
+                                <div class="settings-item">
+                                    <label for="video-size-slider-2" class="form-label">视频大小: <span id="video-size-value-2">100%</span></label>
+                                    <input type="range" class="form-range" id="video-size-slider-2" min="50" max="150" value="100">
+                                </div>
+                            </div>
 
                             <!-- 本地摄像头视频窗口 -->
                             <div id="local-video-container">
@@ -614,32 +853,6 @@
                                         <button class="btn btn-outline-danger flex-grow-1" id="btn_stop_record" disabled>
                                             <i class="bi bi-stop-fill"></i> 停止录制
                                         </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="video-size-control">
-                                        <label for="video-size-slider" class="form-label">视频大小调节: <span id="video-size-value">100%</span></label>
-                                        <input type="range" class="form-range" id="video-size-slider" min="50" max="150" value="100">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="settings-panel mt-3">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-check form-switch mb-3">
-                                            <input class="form-check-input" type="checkbox" id="use-stun">
-                                            <label class="form-check-label" for="use-stun">使用STUN服务器</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check form-switch mb-3">
-                                            <input class="form-check-input" type="checkbox" id="enable-local-camera">
-                                            <label class="form-check-label" for="enable-local-camera">开启本地摄像头</label>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -689,8 +902,16 @@
                                 <!-- 通话中 -->
                                 <div class="call-mode-active" id="call-active" style="display: none;">
                                     <div class="call-status-bar">
-                                        <span class="status-dot"></span>
-                                        <span>通话中</span>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                <span class="status-dot"></span>
+                                                <span>通话中</span>
+                                            </div>
+                                            <div class="call-duration" id="call-duration">
+                                                <i class="bi bi-clock"></i>
+                                                <span>00:00</span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="call-transcript-area" id="call-transcript">
@@ -708,6 +929,12 @@
                                             <i class="bi bi-telephone-x-fill"></i>
                                         </button>
                                     </div>
+
+                                    <!-- 导出对话按钮 -->
+                                    <button class="export-chat-btn" id="export-chat-btn">
+                                        <i class="bi bi-download"></i>
+                                        <span>导出对话记录</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -751,10 +978,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="footer">
-            <p>Made with ❤️ by Marstaos | Video Chat Mode</p>
-        </div>
     </div>
 
     <!-- 隐藏的会话ID -->
@@ -770,11 +993,98 @@
 
     <script>
         $(document).ready(function() {
-            // 视频大小调节
-            $('#video-size-slider').on('input', function() {
+            // ==================== 设置面板功能 ====================
+            // 设置按钮切换
+            $('#settings-btn').click(function(e) {
+                e.stopPropagation();
+                $('#settings-dropdown').toggleClass('active');
+            });
+
+            // 点击其他地方关闭设置面板
+            $(document).click(function(e) {
+                if (!$(e.target).closest('.settings-dropdown').length && !$(e.target).closest('.settings-icon-btn').length) {
+                    $('#settings-dropdown').removeClass('active');
+                }
+            });
+
+            // 视频大小调节（设置面板中）
+            $('#video-size-slider-2').on('input', function() {
                 const value = $(this).val();
-                $('#video-size-value').text(value + '%');
+                $('#video-size-value-2').text(value + '%');
                 $('#video').css('width', value + '%');
+            });
+
+            // ==================== 视频占位符管理 ====================
+            const videoElement = document.getElementById('video');
+            const videoPlaceholder = document.getElementById('video-placeholder');
+
+            // 监听视频加载状态
+            videoElement.addEventListener('loadeddata', function() {
+                if (videoPlaceholder && videoElement.videoWidth > 0) {
+                    videoPlaceholder.style.display = 'none';
+                }
+            });
+
+            videoElement.addEventListener('emptied', function() {
+                if (videoPlaceholder) {
+                    videoPlaceholder.style.display = 'flex';
+                }
+            });
+
+            // ==================== 通话时长计时器 ====================
+            let callStartTime = null;
+            let callDurationInterval = null;
+
+            function startCallTimer() {
+                callStartTime = Date.now();
+                callDurationInterval = setInterval(function() {
+                    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                    const seconds = (elapsed % 60).toString().padStart(2, '0');
+                    $('#call-duration span').text(`${minutes}:${seconds}`);
+                }, 1000);
+            }
+
+            function stopCallTimer() {
+                if (callDurationInterval) {
+                    clearInterval(callDurationInterval);
+                    callDurationInterval = null;
+                }
+                callStartTime = null;
+                $('#call-duration span').text('00:00');
+            }
+
+            // ==================== 导出对话记录 ====================
+            $('#export-chat-btn').click(function() {
+                const transcriptItems = $('#call-transcript .call-transcript-item');
+
+                if (transcriptItems.length === 0) {
+                    alert('暂无对话记录');
+                    return;
+                }
+
+                let content = '信贷智能客服对话记录\n';
+                content += '='.repeat(50) + '\n';
+                content += `导出时间: ${new Date().toLocaleString('zh-CN')}\n`;
+                content += '='.repeat(50) + '\n\n';
+
+                transcriptItems.each(function() {
+                    const text = $(this).text().trim();
+                    content += text + '\n\n';
+                });
+
+                // 创建下载
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `对话记录_${new Date().getTime()}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                console.log('对话记录已导出');
             });
 
             // 连接状态更新
@@ -1410,10 +1720,11 @@
                         }
                     }
 
-                    // 5. 显示通话界面
+                    // 5. 显示通话界面并启动计时器
                     $('#call-connecting').hide();
                     $('#call-active').show();
                     callModeActive = true;
+                    startCallTimer(); // 启动通话计时器
 
                     console.log('电话模式已启动');
 
@@ -1495,6 +1806,9 @@
 
                 // 断开 WebRTC
                 stop();
+
+                // 停止通话计时器
+                stopCallTimer();
 
                 // 重置状态
                 callModeActive = false;

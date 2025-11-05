@@ -151,16 +151,23 @@ async def human(request):
 
         if params['type']=='echo':
             nerfreals[sessionid].put_msg_txt(params['text'])
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": 0, "msg":"ok"}
+                ),
+            )
         elif params['type']=='chat':
-            asyncio.get_event_loop().run_in_executor(None, llm_response, params['text'],nerfreals[sessionid])                         
-            #nerfreals[sessionid].put_msg_txt(res)
-
-        return web.Response(
-            content_type="application/json",
-            text=json.dumps(
-                {"code": 0, "msg":"ok"}
-            ),
-        )
+            # 等待 LLM 回复完成并返回结果
+            response_text = await asyncio.get_event_loop().run_in_executor(
+                None, llm_response, params['text'], nerfreals[sessionid]
+            )
+            return web.Response(
+                content_type="application/json",
+                text=json.dumps(
+                    {"code": 0, "msg":"ok", "response": response_text}
+                ),
+            )
     except Exception as e:
         logger.exception('exception:')
         return web.Response(

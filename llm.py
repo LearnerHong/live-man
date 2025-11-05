@@ -23,6 +23,7 @@ def llm_response(message,nerfreal:BaseReal):
         stream_options={"include_usage": True}
     )
     result=""
+    full_response = ""  # 用于保存完整回复
     first = True
     for chunk in completion:
         if len(chunk.choices)>0:
@@ -32,6 +33,7 @@ def llm_response(message,nerfreal:BaseReal):
                 logger.info(f"llm Time to first chunk: {end-start}s")
                 first = False
             msg = chunk.choices[0].delta.content
+            full_response += msg  # 累积完整回复
             lastpos=0
             #msglist = re.split('[,.!;:，。！?]',msg)
             for i, char in enumerate(msg):
@@ -45,4 +47,5 @@ def llm_response(message,nerfreal:BaseReal):
             result = result+msg[lastpos:]
     end = time.perf_counter()
     logger.info(f"llm Time to last chunk: {end-start}s")
-    nerfreal.put_msg_txt(result)    
+    nerfreal.put_msg_txt(result)
+    return full_response  # 返回完整回复    

@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>livetalking数字人交互平台 - 视频通话模式</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-top: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+            border-bottom: none;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            background-color: #000;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+        }
+
+        video {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            border-radius: var(--border-radius);
+        }
+
+        /* 本地摄像头视频窗口 - 类似微信视频 */
+        #local-video-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            border: 3px solid #fff;
+            background-color: #000;
+            z-index: 10;
+        }
+
+        #local-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* 镜像显示 */
+        }
+
+        .local-video-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .controls-container {
+            padding: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .form-control {
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .status-connected {
+            background-color: #28a745;
+        }
+
+        .status-disconnected {
+            background-color: #dc3545;
+        }
+
+        .status-connecting {
+            background-color: #ffc107;
+        }
+
+        .asr-container {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            border: 1px solid #ced4da;
+        }
+
+        .asr-text {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-message {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .system-message {
+            background-color: #f1f8e9;
+            border-left: 4px solid #8bc34a;
+        }
+
+        .recording-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(220, 53, 69, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: none;
+        }
+
+        .recording-indicator.active {
+            display: flex;
+            align-items: center;
+        }
+
+        .recording-indicator .blink {
+            width: 10px;
+            height: 10px;
+            background-color: #fff;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .mode-switch {
+            margin-bottom: 20px;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background-color: var(--card-bg);
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        }
+
+        .settings-panel {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        /* 持续语音识别按钮 */
+        .voice-toggle-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: 20px auto;
+            border: none;
+        }
+
+        .voice-toggle-btn:hover {
+            background-color: var(--secondary-color);
+            transform: scale(1.05);
+        }
+
+        .voice-toggle-btn.active {
+            background-color: #dc3545;
+            animation: pulse-active 2s infinite;
+        }
+
+        .voice-toggle-btn i {
+            font-size: 28px;
+        }
+
+        .voice-toggle-label {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .voice-toggle-label.active {
+            color: #dc3545;
+        }
+
+        .video-size-control {
+            margin-top: 15px;
+        }
+
+        @keyframes pulse-active {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(220, 53, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+        /* 实时识别文字显示 */
+        .realtime-transcript {
+            min-height: 60px;
+            padding: 12px;
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .realtime-transcript.active {
+            border-color: var(--primary-color);
+            background-color: #f0f7ff;
+        }
+
+        .interim-text {
+            color: #999;
+            font-style: italic;
+        }
+
+        .final-text {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        /* ASR 状态指示器 */
+        .asr-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            padding: 8px;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+        }
+
+        .asr-status.listening {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .asr-status.stopped {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .asr-status i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">livetalking数字人交互平台 - 视频通话模式</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 视频区域 -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="status-indicator status-disconnected" id="connection-status"></span>
+                            <span id="status-text">未连接</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="video-container">
+                            <!-- 数字人视频 -->
+                            <video id="video" autoplay playsinline></video>
+
+                            <!-- 本地摄像头视频窗口 -->
+                            <div id="local-video-container">
+                                <video id="local-video" autoplay playsinline muted></video>
+                                <div class="local-video-placeholder" id="local-video-placeholder">
+                                    <span>摄像头未开启</span>
+                                </div>
+                            </div>
+
+                            <div class="recording-indicator" id="recording-indicator">
+                                <div class="blink"></div>
+                                <span>录制中</span>
+                            </div>
+                        </div>
+
+                        <div class="controls-container">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <button class="btn btn-primary w-100" id="start">
+                                        <i class="bi bi-play-fill"></i> 开始连接
+                                    </button>
+                                    <button class="btn btn-danger w-100" id="stop" style="display: none;">
+                                        <i class="bi bi-stop-fill"></i> 停止连接
+                                    </button>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex">
+                                        <button class="btn btn-outline-primary flex-grow-1 me-2" id="btn_start_record">
+                                            <i class="bi bi-record-fill"></i> 开始录制
+                                        </button>
+                                        <button class="btn btn-outline-danger flex-grow-1" id="btn_stop_record" disabled>
+                                            <i class="bi bi-stop-fill"></i> 停止录制
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="video-size-control">
+                                        <label for="video-size-slider" class="form-label">视频大小调节: <span id="video-size-value">100%</span></label>
+                                        <input type="range" class="form-range" id="video-size-slider" min="50" max="150" value="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-panel mt-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="use-stun">
+                                            <label class="form-check-label" for="use-stun">使用STUN服务器</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mb-3">
+                                            <input class="form-check-input" type="checkbox" id="enable-local-camera">
+                                            <label class="form-check-label" for="enable-local-camera">开启本地摄像头</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧交互 -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="interaction-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="true">对话模式</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tts-tab" data-bs-toggle="tab" data-bs-target="#tts" type="button" role="tab" aria-controls="tts" aria-selected="false">朗读模式</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="interaction-tabs-content">
+                            <!-- 对话模式 -->
+                            <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                                <div class="asr-container mb-3" id="chat-messages">
+                                    <div class="asr-text system-message">
+                                        系统: 欢迎使用livetalking，请点击"开始连接"按钮开始对话。
+                                    </div>
+                                </div>
+
+                                <!-- ASR 状态显示 -->
+                                <div class="asr-status stopped" id="asr-status">
+                                    <i class="bi bi-mic-mute"></i>
+                                    <span>语音识别已停止</span>
+                                </div>
+
+                                <!-- 实时识别文字显示 -->
+                                <div class="realtime-transcript" id="realtime-transcript">
+                                    <span class="text-muted">点击下方麦克风开始语音对话...</span>
+                                </div>
+
+                                <!-- 文本输入（备用） -->
+                                <form id="chat-form">
+                                    <div class="input-group mb-3">
+                                        <textarea class="form-control" id="chat-message" rows="2" placeholder="也可以输入文字..."></textarea>
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </div>
+                                </form>
+
+                                <!-- 持续语音识别按钮 -->
+                                <button class="voice-toggle-btn" id="voice-toggle-btn">
+                                    <i class="bi bi-mic-fill"></i>
+                                </button>
+                                <div class="voice-toggle-label" id="voice-toggle-label">点击开启语音对话</div>
+                            </div>
+
+                            <!-- 朗读模式 -->
+                            <div class="tab-pane fade" id="tts" role="tabpanel" aria-labelledby="tts-tab">
+                                <form id="echo-form">
+                                    <div class="mb-3">
+                                        <label for="message" class="form-label">输入要朗读的文本</label>
+                                        <textarea class="form-control" id="message" rows="6" placeholder="输入您想让数字人朗读的文字..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-volume-up"></i> 朗读文本
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ by Marstaos | Video Chat Mode</p>
+        </div>
+    </div>
+
+    <!-- 隐藏的会话ID -->
+    <input type="hidden" id="sessionid" value="0">
+
+    <script src="client.js"></script>
+    <script src="srs.sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- 阿里云实时语音识别 SDK (可选，如果使用阿里云ASR) -->
+    <!-- <script src="https://g.alicdn.com/apsara-media-box/imp-web-player/2.16.3/index.js"></script> -->
+
+    <script>
+        $(document).ready(function() {
+            // 视频大小调节
+            $('#video-size-slider').on('input', function() {
+                const value = $(this).val();
+                $('#video-size-value').text(value + '%');
+                $('#video').css('width', value + '%');
+            });
+
+            // 连接状态更新
+            function updateConnectionStatus(status) {
+                const statusIndicator = $('#connection-status');
+                const statusText = $('#status-text');
+
+                statusIndicator.removeClass('status-connected status-disconnected status-connecting');
+
+                switch(status) {
+                    case 'connected':
+                        statusIndicator.addClass('status-connected');
+                        statusText.text('已连接');
+                        break;
+                    case 'connecting':
+                        statusIndicator.addClass('status-connecting');
+                        statusText.text('连接中...');
+                        break;
+                    case 'disconnected':
+                    default:
+                        statusIndicator.addClass('status-disconnected');
+                        statusText.text('未连接');
+                        break;
+                }
+            }
+
+            // 添加聊天消息
+            function addChatMessage(message, type = 'user') {
+                const messagesContainer = $('#chat-messages');
+                const messageClass = type === 'user' ? 'user-message' : 'system-message';
+                const sender = type === 'user' ? '您' : '数字人';
+
+                const messageElement = $(`
+                    <div class="asr-text ${messageClass}">
+                        ${sender}: ${message}
+                    </div>
+                `);
+
+                messagesContainer.append(messageElement);
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
+            }
+
+            // 开始/停止按钮
+            $('#start').click(function() {
+                updateConnectionStatus('connecting');
+                start();
+                $(this).hide();
+                $('#stop').show();
+
+                let connectionCheckTimer = setInterval(function() {
+                    const video = document.getElementById('video');
+                    if (video.readyState >= 3 && video.videoWidth > 0) {
+                        updateConnectionStatus('connected');
+                        clearInterval(connectionCheckTimer);
+                    }
+                }, 2000);
+
+                setTimeout(function() {
+                    if (connectionCheckTimer) {
+                        clearInterval(connectionCheckTimer);
+                    }
+                }, 60000);
+            });
+
+            $('#stop').click(function() {
+                stop();
+                $(this).hide();
+                $('#start').show();
+                updateConnectionStatus('disconnected');
+
+                // 停止语音识别
+                if (isVoiceActive) {
+                    stopContinuousRecognition();
+                }
+            });
+
+            // 录制功能
+            $('#btn_start_record').click(function() {
+                console.log('Starting recording...');
+                fetch('/record', {
+                    body: JSON.stringify({
+                        type: 'start_record',
+                        sessionid: parseInt(document.getElementById('sessionid').value),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                }).then(function(response) {
+                    if (response.ok) {
+                        console.log('Recording started.');
+                        $('#btn_start_record').prop('disabled', true);
+                        $('#btn_stop_record').prop('disabled', false);
+                        $('#recording-indicator').addClass('active');
+                    } else {
+                        console.error('Failed to start recording.');
+                    }
+                }).catch(function(error) {
+                    console.error('Error:', error);
+                });
+            });
+
+            $('#btn_stop_record').click(function() {
+                console.log('Stopping recording...');
+                fetch('/record', {
+                    body: JSON.stringify({
+                        type: 'end_record',
+                        sessionid: parseInt(document.getElementById('sessionid').value),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                }).then(function(response) {
+                    if (response.ok) {
+                        console.log('Recording stopped.');
+                        $('#btn_start_record').prop('disabled', false);
+                        $('#btn_stop_record').prop('disabled', true);
+                        $('#recording-indicator').removeClass('active');
+                    } else {
+                        console.error('Failed to stop recording.');
+                    }
+                }).catch(function(error) {
+                    console.error('Error:', error);
+                });
+            });
+
+            // 朗读模式
+            $('#echo-form').on('submit', function(e) {
+                e.preventDefault();
+                var message = $('#message').val();
+                if (!message.trim()) return;
+
+                console.log('Sending echo message:', message);
+
+                fetch('/human', {
+                    body: JSON.stringify({
+                        text: message,
+                        type: 'echo',
+                        interrupt: true,
+                        sessionid: parseInt(document.getElementById('sessionid').value),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                $('#message').val('');
+                addChatMessage(`已发送朗读请求: "${message}"`, 'system');
+            });
+
+            // 聊天模式文本提交
+            $('#chat-form').on('submit', function(e) {
+                e.preventDefault();
+                var message = $('#chat-message').val();
+                if (!message.trim()) return;
+
+                console.log('Sending chat message:', message);
+
+                fetch('/human', {
+                    body: JSON.stringify({
+                        text: message,
+                        type: 'chat',
+                        interrupt: true,
+                        sessionid: parseInt(document.getElementById('sessionid').value),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                });
+
+                addChatMessage(message, 'user');
+                $('#chat-message').val('');
+            });
+
+            // ==================== 本地摄像头功能 ====================
+            let localStream = null;
+
+            $('#enable-local-camera').change(function() {
+                if ($(this).is(':checked')) {
+                    startLocalCamera();
+                } else {
+                    stopLocalCamera();
+                }
+            });
+
+            function startLocalCamera() {
+                navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    }
+                })
+                .then(function(stream) {
+                    localStream = stream;
+                    const localVideo = document.getElementById('local-video');
+                    localVideo.srcObject = stream;
+                    $('#local-video-placeholder').hide();
+                    $('#local-video').show();
+                    console.log('本地摄像头已启动');
+                })
+                .catch(function(error) {
+                    console.error('无法访问摄像头:', error);
+                    alert('无法访问摄像头，请检查浏览器权限设置。');
+                    $('#enable-local-camera').prop('checked', false);
+                });
+            }
+
+            function stopLocalCamera() {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                    $('#local-video').hide();
+                    $('#local-video-placeholder').show();
+                    console.log('本地摄像头已关闭');
+                }
+            }
+
+            // ==================== 持续语音识别功能 ====================
+            let recognition = null;
+            let isVoiceActive = false;
+            let currentTranscript = '';
+            let finalTranscript = '';
+            let sentenceTimeout = null;
+
+            // 初始化语音识别
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;  // 持续识别
+                recognition.interimResults = true;  // 返回中间结果
+                recognition.lang = 'zh-CN';
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = function() {
+                    console.log('语音识别已开始');
+                    $('#asr-status')
+                        .removeClass('stopped')
+                        .addClass('listening')
+                        .html('<i class="bi bi-mic-fill"></i><span>正在监听...</span>');
+                    $('#realtime-transcript').addClass('active');
+                };
+
+                recognition.onresult = function(event) {
+                    let interimTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+
+                        if (event.results[i].isFinal) {
+                            // 最终结果
+                            finalTranscript += transcript;
+                            console.log('识别结果（最终）:', transcript);
+
+                            // 清除之前的定时器
+                            if (sentenceTimeout) {
+                                clearTimeout(sentenceTimeout);
+                            }
+
+                            // 设置新的定时器，1.5秒后发送
+                            sentenceTimeout = setTimeout(function() {
+                                sendTranscriptToLLM(finalTranscript);
+                                finalTranscript = '';
+                            }, 1500);
+
+                        } else {
+                            // 中间结果
+                            interimTranscript += transcript;
+                        }
+                    }
+
+                    // 更新显示
+                    updateTranscriptDisplay(finalTranscript, interimTranscript);
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('语音识别错误:', event.error);
+                    if (event.error === 'no-speech') {
+                        console.log('未检测到语音，继续监听...');
+                    } else if (event.error === 'aborted') {
+                        console.log('识别被中止');
+                    } else {
+                        addChatMessage(`语音识别错误: ${event.error}`, 'system');
+                    }
+                };
+
+                recognition.onend = function() {
+                    console.log('语音识别已结束');
+                    // 如果是持续模式且未主动停止，则自动重启
+                    if (isVoiceActive) {
+                        console.log('自动重启语音识别...');
+                        setTimeout(function() {
+                            if (isVoiceActive) {
+                                try {
+                                    recognition.start();
+                                } catch (e) {
+                                    console.error('重启识别失败:', e);
+                                }
+                            }
+                        }, 100);
+                    } else {
+                        $('#asr-status')
+                            .removeClass('listening')
+                            .addClass('stopped')
+                            .html('<i class="bi bi-mic-mute"></i><span>语音识别已停止</span>');
+                        $('#realtime-transcript').removeClass('active');
+                    }
+                };
+            } else {
+                console.warn('浏览器不支持 Web Speech API');
+                $('#voice-toggle-btn').prop('disabled', true);
+                $('#voice-toggle-label').text('浏览器不支持语音识别');
+                addChatMessage('您的浏览器不支持语音识别功能，请使用 Chrome 或 Edge 浏览器', 'system');
+            }
+
+            // 语音开关按钮
+            $('#voice-toggle-btn').click(function() {
+                if (!recognition) {
+                    alert('浏览器不支持语音识别功能');
+                    return;
+                }
+
+                if (isVoiceActive) {
+                    stopContinuousRecognition();
+                } else {
+                    startContinuousRecognition();
+                }
+            });
+
+            function startContinuousRecognition() {
+                if (!recognition) return;
+
+                try {
+                    recognition.start();
+                    isVoiceActive = true;
+
+                    $('#voice-toggle-btn')
+                        .addClass('active')
+                        .html('<i class="bi bi-mic-mute-fill"></i>');
+                    $('#voice-toggle-label')
+                        .addClass('active')
+                        .text('点击停止语音对话');
+
+                    console.log('持续语音识别已启动');
+                } catch (e) {
+                    console.error('启动语音识别失败:', e);
+                }
+            }
+
+            function stopContinuousRecognition() {
+                if (!recognition) return;
+
+                isVoiceActive = false;
+                recognition.stop();
+
+                $('#voice-toggle-btn')
+                    .removeClass('active')
+                    .html('<i class="bi bi-mic-fill"></i>');
+                $('#voice-toggle-label')
+                    .removeClass('active')
+                    .text('点击开启语音对话');
+
+                // 发送剩余文本
+                if (finalTranscript.trim()) {
+                    sendTranscriptToLLM(finalTranscript);
+                    finalTranscript = '';
+                }
+
+                // 清空显示
+                $('#realtime-transcript').html('<span class="text-muted">点击下方麦克风开始语音对话...</span>');
+
+                console.log('持续语音识别已停止');
+            }
+
+            // 更新实时识别文字显示
+            function updateTranscriptDisplay(final, interim) {
+                let html = '';
+
+                if (final) {
+                    html += `<span class="final-text">${final}</span>`;
+                }
+
+                if (interim) {
+                    html += `<span class="interim-text">${interim}</span>`;
+                }
+
+                if (!final && !interim) {
+                    html = '<span class="text-muted">正在监听...</span>';
+                }
+
+                $('#realtime-transcript').html(html);
+            }
+
+            // 发送识别文字到 LLM
+            function sendTranscriptToLLM(text) {
+                if (!text || !text.trim()) return;
+
+                const cleanText = text.trim();
+                console.log('发送到 LLM:', cleanText);
+
+                // 显示在聊天记录中
+                addChatMessage(cleanText, 'user');
+
+                // 发送到后端
+                fetch('/human', {
+                    body: JSON.stringify({
+                        text: cleanText,
+                        type: 'chat',
+                        interrupt: true,
+                        sessionid: parseInt(document.getElementById('sessionid').value),
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                }).then(function(response) {
+                    if (!response.ok) {
+                        console.error('发送失败');
+                        addChatMessage('发送失败，请重试', 'system');
+                    }
+                }).catch(function(error) {
+                    console.error('Error:', error);
+                    addChatMessage('网络错误，请检查连接', 'system');
+                });
+            }
+
+            // WebRTC 相关功能
+            if (typeof window.onWebRTCConnected === 'function') {
+                const originalOnConnected = window.onWebRTCConnected;
+                window.onWebRTCConnected = function() {
+                    updateConnectionStatus('connected');
+                    if (originalOnConnected) originalOnConnected();
+                };
+            } else {
+                window.onWebRTCConnected = function() {
+                    updateConnectionStatus('connected');
+                };
+            }
+
+            if (typeof window.onWebRTCDisconnected === 'function') {
+                const originalOnDisconnected = window.onWebRTCDisconnected;
+                window.onWebRTCDisconnected = function() {
+                    updateConnectionStatus('disconnected');
+                    if (originalOnDisconnected) originalOnDisconnected();
+                };
+            } else {
+                window.onWebRTCDisconnected = function() {
+                    updateConnectionStatus('disconnected');
+                };
+            }
+
+            // 页面卸载时清理资源
+            window.addEventListener('beforeunload', function() {
+                if (isVoiceActive) {
+                    stopContinuousRecognition();
+                }
+                if (localStream) {
+                    stopLocalCamera();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

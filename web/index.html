@@ -366,6 +366,20 @@
         .asr-status i {
             margin-right: 5px;
         }
+
+        /* 正在思考消息动画 */
+        .thinking-message {
+            opacity: 0.8;
+        }
+
+        .thinking-message i {
+            animation: thinking-blink 1.5s infinite;
+        }
+
+        @keyframes thinking-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
@@ -714,6 +728,15 @@
                 addChatMessage(message, 'user');
                 $('#chat-message').val('');
 
+                // 添加"正在思考"占位消息
+                const thinkingMsg = $(`
+                    <div class="asr-text system-message thinking-message">
+                        数字人: <i class="bi bi-three-dots"></i> 正在思考中...
+                    </div>
+                `);
+                $('#chat-messages').append(thinkingMsg);
+                $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+
                 fetch('/human', {
                     body: JSON.stringify({
                         text: message,
@@ -728,10 +751,16 @@
                 }).then(function(response) {
                     return response.json();
                 }).then(function(data) {
+                    // 移除"正在思考"消息
+                    $('.thinking-message').remove();
+
                     if (data.code === 0 && data.response) {
                         addChatMessage(data.response, 'system');
                     }
                 }).catch(function(error) {
+                    // 移除"正在思考"消息
+                    $('.thinking-message').remove();
+
                     console.error('Error:', error);
                     addChatMessage('网络错误，请检查连接', 'system');
                 });
@@ -749,10 +778,21 @@
             });
 
             function startLocalCamera() {
+                // 调试信息
+                console.log('Location:', window.location.href);
+                console.log('isSecureContext:', window.isSecureContext);
+                console.log('navigator.mediaDevices:', navigator.mediaDevices);
+
                 // 检查浏览器是否支持 getUserMedia
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     console.error('浏览器不支持 getUserMedia API');
-                    alert('您的浏览器不支持摄像头功能，或页面不是通过 HTTPS/localhost 访问。\n请使用 Chrome/Edge 浏览器，并确保通过 localhost 或 HTTPS 访问。');
+                    console.error('navigator.mediaDevices:', navigator.mediaDevices);
+                    console.error('window.isSecureContext:', window.isSecureContext);
+
+                    alert('您的浏览器不支持摄像头功能。\n\n调试信息：\n' +
+                          'isSecureContext: ' + window.isSecureContext + '\n' +
+                          'mediaDevices: ' + (navigator.mediaDevices ? '存在' : '不存在') + '\n' +
+                          'getUserMedia: ' + (navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? '存在' : '不存在'));
                     $('#enable-local-camera').prop('checked', false);
                     return;
                 }
@@ -811,6 +851,20 @@
             let finalTranscript = '';
             let sentenceTimeout = null;
 
+            // 请求麦克风权限
+            async function requestMicrophonePermission() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    // 获取权限后立即停止，我们只是用来测试权限
+                    stream.getTracks().forEach(track => track.stop());
+                    console.log('麦克风权限已获取');
+                    return true;
+                } catch (error) {
+                    console.error('麦克风权限被拒绝:', error);
+                    throw error;
+                }
+            }
+
             // 初始化语音识别
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -846,11 +900,22 @@
                                 clearTimeout(sentenceTimeout);
                             }
 
-                            // 设置新的定时器，1.5秒后发送
-                            sentenceTimeout = setTimeout(function() {
-                                sendTranscriptToLLM(finalTranscript);
-                                finalTranscript = '';
-                            }, 1500);
+                            // 检查是否包含明确的句子结束符
+                            const endsWithPunctuation = /[。！？\.!?]$/.test(finalTranscript.trim());
+
+                            if (endsWithPunctuation) {
+                                // 如果包含句子结束符，0.5秒后立即发送
+                                sentenceTimeout = setTimeout(function() {
+                                    sendTranscriptToLLM(finalTranscript);
+                                    finalTranscript = '';
+                                }, 500);
+                            } else {
+                                // 否则等待0.8秒，看用户是否继续说话
+                                sentenceTimeout = setTimeout(function() {
+                                    sendTranscriptToLLM(finalTranscript);
+                                    finalTranscript = '';
+                                }, 800);
+                            }
 
                         } else {
                             // 中间结果
@@ -868,6 +933,16 @@
                         console.log('未检测到语音，继续监听...');
                     } else if (event.error === 'aborted') {
                         console.log('识别被中止');
+                    } else if (event.error === 'not-allowed') {
+                        // 权限被拒绝，停止识别
+                        isVoiceActive = false;
+                        addChatMessage('麦克风权限被拒绝，请在浏览器设置中允许麦克风访问', 'system');
+                        $('#voice-toggle-btn')
+                            .removeClass('active')
+                            .html('<i class="bi bi-mic-fill"></i>');
+                        $('#voice-toggle-label')
+                            .removeClass('active')
+                            .text('点击开启语音对话');
                     } else {
                         addChatMessage(`语音识别错误: ${event.error}`, 'system');
                     }
@@ -903,16 +978,28 @@
             }
 
             // 语音开关按钮
-            $('#voice-toggle-btn').click(function() {
+            $('#voice-toggle-btn').click(async function() {
                 if (!recognition) {
-                    alert('浏览器不支持语音识别功能');
+                    alert('浏览器不支持语音识别功能，请使用 Chrome 或 Edge 浏览器');
                     return;
                 }
 
                 if (isVoiceActive) {
                     stopContinuousRecognition();
                 } else {
-                    startContinuousRecognition();
+                    // 在启动语音识别前先请求麦克风权限
+                    try {
+                        await requestMicrophonePermission();
+                        startContinuousRecognition();
+                    } catch (error) {
+                        console.error('麦克风权限请求失败:', error);
+                        let errorMsg = '无法访问麦克风，请检查以下内容：\n\n';
+                        errorMsg += '1. 确保使用 Chrome 或 Edge 浏览器\n';
+                        errorMsg += '2. 通过 localhost 或 HTTPS 访问页面\n';
+                        errorMsg += '3. 点击地址栏左侧的锁图标，允许麦克风权限\n';
+                        errorMsg += '4. 确保没有其他应用正在使用麦克风';
+                        alert(errorMsg);
+                    }
                 }
             });
 
@@ -990,6 +1077,15 @@
                 // 显示在聊天记录中
                 addChatMessage(cleanText, 'user');
 
+                // 添加"正在思考"占位消息
+                const thinkingMsg = $(`
+                    <div class="asr-text system-message thinking-message">
+                        数字人: <i class="bi bi-three-dots"></i> 正在思考中...
+                    </div>
+                `);
+                $('#chat-messages').append(thinkingMsg);
+                $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+
                 // 发送到后端
                 fetch('/human', {
                     body: JSON.stringify({
@@ -1005,6 +1101,9 @@
                 }).then(function(response) {
                     return response.json();
                 }).then(function(data) {
+                    // 移除"正在思考"消息
+                    $('.thinking-message').remove();
+
                     if (data.code === 0 && data.response) {
                         addChatMessage(data.response, 'system');
                     } else {
@@ -1012,6 +1111,9 @@
                         addChatMessage('发送失败，请重试', 'system');
                     }
                 }).catch(function(error) {
+                    // 移除"正在思考"消息
+                    $('.thinking-message').remove();
+
                     console.error('Error:', error);
                     addChatMessage('网络错误，请检查连接', 'system');
                 });

@@ -521,7 +521,14 @@ class DoubaoTTS(BaseTTS):
 
         _cluster = 'volcano_tts'
         _host = "openspeech.bytedance.com"
-        self.api_url = f"wss://{_host}/api/v1/tts/ws_binary"
+
+        # 自动检测音色版本：如果是2.0音色（含moon_bigtts），使用v3接口
+        if 'moon_bigtts' in opt.REF_FILE or 'bigtts' in opt.REF_FILE:
+            self.api_url = f"wss://{_host}/api/v3/tts/ws_binary"
+            self.api_version = "v3"
+        else:
+            self.api_url = f"wss://{_host}/api/v1/tts/ws_binary"
+            self.api_version = "v1"
 
         # 读取语速、音量、音调参数
         self.speed_ratio = getattr(opt, 'tts_speed', 1.0)
@@ -534,7 +541,8 @@ class DoubaoTTS(BaseTTS):
         logger.info(f"   语速: {self.speed_ratio}x (1.0=正常)")
         logger.info(f"   音量: {self.volume_ratio}x")
         logger.info(f"   音调: {self.pitch_ratio}x")
-        logger.info(f"   API: {self.api_url}")
+        logger.info(f"   API版本: {self.api_version} (音色自动匹配)")
+        logger.info(f"   接口: {self.api_url}")
 
         self.request_json = {
             "app": {

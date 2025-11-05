@@ -1,19 +1,3 @@
-###############################################################################
-#  Copyright (C) 2024 LiveTalking@lipku https://github.com/lipku/LiveTalking
-#  email: lipku@foxmail.com
-# 
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#  
-#       http://www.apache.org/licenses/LICENSE-2.0
-# 
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-###############################################################################
 from __future__ import annotations
 import time
 import numpy as np
@@ -525,14 +509,24 @@ class DoubaoTTS(BaseTTS):
         # 从配置中读取火山引擎参数
         self.appid = os.getenv("DOUBAO_APPID")
         self.token = os.getenv("DOUBAO_TOKEN")
+
+        # 检查环境变量
+        if not self.appid or not self.token:
+            raise ValueError(
+                "豆包TTS需要设置环境变量:\n"
+                "export DOUBAO_APPID='your_appid'\n"
+                "export DOUBAO_TOKEN='your_token'\n"
+                "请访问 https://console.volcengine.com/speech/app 获取"
+            )
+
         _cluster = 'volcano_tts'
         _host = "openspeech.bytedance.com"
         self.api_url = f"wss://{_host}/api/v1/tts/ws_binary"
-        
+
         self.request_json = {
             "app": {
                 "appid": self.appid,
-                "token": "access_token",
+                "token": self.token,
                 "cluster": _cluster
             },
             "user": {

@@ -557,15 +557,16 @@ class DoubaoTTS(BaseTTS):
 
         try:
             # 创建请求对象
-            default_header = bytearray(b'\x11\x10\x11\x00')
+            # 协议头：版本1, header_size=1(4字节), FullClientRequest(1), NoSeq(0), JSON(1), 无压缩(0)
+            default_header = bytearray(b'\x11\x10\x10\x00')  # 改为不压缩（第3字节从\x11改为\x10）
             submit_request_json = copy.deepcopy(self.request_json)
-            submit_request_json["user"]["uid"] = self.parent.sessionid
+            submit_request_json["user"]["uid"] = str(self.parent.sessionid)
             submit_request_json["audio"]["voice_type"] = voice_type
             submit_request_json["request"]["text"] = text
             submit_request_json["request"]["reqid"] = str(uuid.uuid4())
             submit_request_json["request"]["operation"] = "submit"
             payload_bytes = str.encode(json.dumps(submit_request_json))
-            payload_bytes = gzip.compress(payload_bytes)  # if no compression, comment this line
+            # payload_bytes = gzip.compress(payload_bytes)  # 禁用压缩，对齐官方示例
             full_client_request = bytearray(default_header)
             full_client_request.extend((len(payload_bytes)).to_bytes(4, 'big'))  # payload size(4 bytes)
             full_client_request.extend(payload_bytes)  # payload
@@ -607,18 +608,32 @@ class DoubaoTTS(BaseTTS):
                         if sequence_number < 0:
                             logger.info(f"✅ 豆包TTS完成: 共{chunk_count}个音频块, {total_bytes}字节")
                             break
-                    elif message_type == 0xf:  # 错误或状态消息
+                    elif message_type == 0xf:  # 错误消息 (MsgType.Error)
                         try:
-                            # 尝试解析错误消息
-                            error_payload = payload
-                            if message_type_specific_flags == 1:
-                                # gzip 压缩
-                                error_payload = gzip.decompress(payload)
-                            error_msg = json.loads(error_payload.decode('utf-8'))
-                            logger.error(f"❌ 豆包API错误: {json.dumps(error_msg, ensure_ascii=False, indent=2)}")
+                            # Error消息格式（在header之后）：
+                            # - error_code (4 bytes, uint32)
+                            # - payload_size (4 bytes, uint32)
+                            # - payload_data (variable)
+                            if len(payload) >= 8:
+                                error_code = int.from_bytes(payload[:4], "big", signed=False)
+                                payload_size = int.from_bytes(payload[4:8], "big", signed=False)
+                                error_payload = payload[8:8+payload_size]
+                                error_text = error_payload.decode('utf-8', 'ignore')
+                                logger.error(f"❌ 豆包API错误:")
+                                logger.error(f"   错误码: {error_code}")
+                                logger.error(f"   错误信息: {error_text}")
+                                try:
+                                    error_json = json.loads(error_text)
+                                    logger.error(f"   详细: {json.dumps(error_json, ensure_ascii=False, indent=2)}")
+                                except:
+                                    pass
+                            else:
+                                logger.error(f"❌ 收到错误消息(类型15)，但payload太短: {len(payload)} bytes")
+                                logger.error(f"   原始hex: {payload.hex()}")
                         except Exception as parse_err:
-                            logger.error(f"❌ 收到错误消息(类型15)，解析失败: {parse_err}")
+                            logger.error(f"❌ 解析错误消息失败: {parse_err}")
                             logger.error(f"   原始payload长度: {len(payload)} bytes")
+                            logger.error(f"   Hex: {payload[:100].hex()}")
                         break
                     else:
                         logger.warning(f"⚠️ 收到未知消息类型: {message_type}, flags: {message_type_specific_flags}")

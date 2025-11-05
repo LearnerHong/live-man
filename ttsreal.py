@@ -1,19 +1,3 @@
-###############################################################################
-#  Copyright (C) 2024 LiveTalking@lipku https://github.com/lipku/LiveTalking
-#  email: lipku@foxmail.com
-# 
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#  
-#       http://www.apache.org/licenses/LICENSE-2.0
-# 
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-###############################################################################
 from __future__ import annotations
 import time
 import numpy as np
@@ -525,14 +509,29 @@ class DoubaoTTS(BaseTTS):
         # 从配置中读取火山引擎参数
         self.appid = os.getenv("DOUBAO_APPID")
         self.token = os.getenv("DOUBAO_TOKEN")
+
+        # 检查环境变量
+        if not self.appid or not self.token:
+            raise ValueError(
+                "豆包TTS需要设置环境变量:\n"
+                "export DOUBAO_APPID='your_appid'\n"
+                "export DOUBAO_TOKEN='your_token'\n"
+                "请访问 https://console.volcengine.com/speech/app 获取"
+            )
+
         _cluster = 'volcano_tts'
         _host = "openspeech.bytedance.com"
         self.api_url = f"wss://{_host}/api/v1/tts/ws_binary"
-        
+
+        logger.info(f"✅ 豆包TTS初始化成功")
+        logger.info(f"   APPID: {self.appid}")
+        logger.info(f"   音色: {opt.REF_FILE}")
+        logger.info(f"   API: {self.api_url}")
+
         self.request_json = {
             "app": {
                 "appid": self.appid,
-                "token": "access_token",
+                "token": self.token,
                 "cluster": _cluster
             },
             "user": {
@@ -558,6 +557,8 @@ class DoubaoTTS(BaseTTS):
         start = time.perf_counter()
         voice_type = self.opt.REF_FILE
 
+        logger.info(f"🎤 豆包TTS开始合成: '{text[:50]}...' (音色: {voice_type})")
+
         try:
             # 创建请求对象
             default_header = bytearray(b'\x11\x10\x11\x00')
@@ -573,10 +574,14 @@ class DoubaoTTS(BaseTTS):
             full_client_request.extend((len(payload_bytes)).to_bytes(4, 'big'))  # payload size(4 bytes)
             full_client_request.extend(payload_bytes)  # payload
 
+            logger.info(f"🔌 正在连接豆包WebSocket: {self.api_url}")
             header = {"Authorization": f"Bearer; {self.token}"}
             first = True
             async with websockets.connect(self.api_url, extra_headers=header, ping_interval=None) as ws:
+                logger.info(f"✅ WebSocket连接成功，发送请求...")
                 await ws.send(full_client_request)
+                chunk_count = 0
+                total_bytes = 0
                 while True:
                     res = await ws.recv()
                     header_size = res[0] & 0x0f
@@ -586,22 +591,26 @@ class DoubaoTTS(BaseTTS):
 
                     if message_type == 0xb:  # audio-only server response
                         if message_type_specific_flags == 0:  # no sequence number as ACK
-                            #print("                Payload size: 0")
                             continue
                         else:
                             if first:
                                 end = time.perf_counter()
-                                logger.info(f"doubao tts Time to first chunk: {end-start}s")
+                                logger.info(f"⚡ 首帧延迟: {(end-start)*1000:.1f}ms")
                                 first = False
                             sequence_number = int.from_bytes(payload[:4], "big", signed=True)
                             payload_size = int.from_bytes(payload[4:8], "big", signed=False)
                             payload = payload[8:]
+                            chunk_count += 1
+                            total_bytes += len(payload)
                             yield payload
                         if sequence_number < 0:
+                            logger.info(f"✅ 豆包TTS完成: 共{chunk_count}个音频块, {total_bytes}字节")
                             break
                     else:
+                        logger.warning(f"⚠️ 收到非音频消息类型: {message_type}")
                         break
         except Exception as e:
+            logger.error(f"❌ 豆包TTS异常: {e}")
             logger.exception('doubao')
         # # 检查响应状态码
         # if response.status_code == 200:
@@ -614,37 +623,44 @@ class DoubaoTTS(BaseTTS):
 
     def txt_to_audio(self, msg):
         text, textevent = msg
-        asyncio.new_event_loop().run_until_complete(
-            self.stream_tts(
-                self.doubao_voice(text),
-                msg
+        logger.info(f"📝 收到TTS文本消息: '{text[:100]}...'")
+        try:
+            asyncio.new_event_loop().run_until_complete(
+                self.stream_tts(
+                    self.doubao_voice(text),
+                    msg
+                )
             )
-        )
+            logger.info(f"✅ TTS处理完成")
+        except Exception as e:
+            logger.error(f"❌ txt_to_audio异常: {e}")
+            logger.exception('txt_to_audio')
 
     async def stream_tts(self, audio_stream, msg):
         text, textevent = msg
         first = True
         last_stream = np.array([],dtype=np.float32)
+        frame_count = 0
         async for chunk in audio_stream:
             if chunk is not None and len(chunk) > 0:
                 stream = np.frombuffer(chunk, dtype=np.int16).astype(np.float32) / 32767
                 stream = np.concatenate((last_stream,stream))
-                #stream = resampy.resample(x=stream, sr_orig=24000, sr_new=self.sample_rate)
-                # byte_stream=BytesIO(buffer)
-                # stream = self.__create_bytes_stream(byte_stream)
                 streamlen = stream.shape[0]
                 idx = 0
                 while streamlen >= self.chunk:
                     eventpoint = None
                     if first:
                         eventpoint = {'status': 'start', 'text': text, 'msgenvent': textevent}
+                        logger.info(f"🔊 开始播放音频")
                         first = False
                     self.parent.put_audio_frame(stream[idx:idx + self.chunk], eventpoint)
+                    frame_count += 1
                     streamlen -= self.chunk
                     idx += self.chunk
                 last_stream = stream[idx:] #get the remain stream
         eventpoint = {'status': 'end', 'text': text, 'msgenvent': textevent}
         self.parent.put_audio_frame(np.zeros(self.chunk, np.float32), eventpoint)
+        logger.info(f"🎵 音频流结束，共发送{frame_count}帧")
 
 ###########################################################################################
 class XTTS(BaseTTS):
